@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Notice = require('../models/Notice');
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 
 // GET /api/notices — public
 router.get('/', async (req, res) => {

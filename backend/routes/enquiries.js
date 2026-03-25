@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Enquiry = require('../models/Enquiry');
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 
 // GET /api/enquiries — admin
 router.get('/', auth, async (req, res) => {

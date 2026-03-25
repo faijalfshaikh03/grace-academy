@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const GalleryImage = require('../models/GalleryImage');
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 
 // GET /api/gallery — public
 router.get('/', async (req, res) => {

@@ -15,12 +15,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
-// Routes
+// Routes — existing
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/notices', require('./routes/notices'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/enquiries', require('./routes/enquiries'));
 app.use('/api/gallery', require('./routes/gallery'));
+
+// Routes — ERP
+app.use('/api/teachers', require('./routes/teachers'));
+app.use('/api/classes', require('./routes/classes'));
+app.use('/api/students', require('./routes/students'));
+app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/progress', require('./routes/progress'));
+app.use('/api/homework', require('./routes/homework'));
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'GA School API is running' }));
