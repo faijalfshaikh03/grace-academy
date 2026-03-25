@@ -47,4 +47,35 @@ router.get('/:id', authenticate, authorize('admin', 'teacher'), async (req, res)
   }
 });
 
+// PUT /api/classes/:id — admin only
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { class_name, section, class_teacher_id } = req.body;
+    const update = {};
+    if (class_name) update.class_name = class_name;
+    if (section) update.section = section;
+    if (class_teacher_id) {
+      const teacher = await Teacher.findById(class_teacher_id);
+      if (!teacher) return res.status(400).json({ message: 'Teacher not found' });
+      update.class_teacher_id = class_teacher_id;
+    }
+    const cls = await Class.findByIdAndUpdate(req.params.id, update, { new: true }).populate('class_teacher_id', 'name email subject');
+    if (!cls) return res.status(404).json({ message: 'Class not found' });
+    res.json(cls);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// DELETE /api/classes/:id — admin only
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const cls = await Class.findByIdAndDelete(req.params.id);
+    if (!cls) return res.status(404).json({ message: 'Class not found' });
+    res.json({ message: 'Class deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

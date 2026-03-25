@@ -48,16 +48,22 @@ export const deleteGalleryImage = (id) => api.delete(`/gallery/${id}`);
 export const getTeachers = () => api.get('/teachers');
 export const getTeacher = (id) => api.get(`/teachers/${id}`);
 export const createTeacher = (data) => api.post('/teachers', data);
+export const updateTeacher = (id, data) => api.put(`/teachers/${id}`, data);
+export const deleteTeacher = (id) => api.delete(`/teachers/${id}`);
 
 // Classes
 export const getClasses = () => api.get('/classes');
 export const getClass = (id) => api.get(`/classes/${id}`);
 export const createClass = (data) => api.post('/classes', data);
+export const updateClass = (id, data) => api.put(`/classes/${id}`, data);
+export const deleteClass = (id) => api.delete(`/classes/${id}`);
 
 // Students
 export const getStudents = (params) => api.get('/students', { params });
 export const getStudent = (id) => api.get(`/students/${id}`);
 export const createStudent = (data) => api.post('/students', data);
+export const updateStudent = (id, data) => api.put(`/students/${id}`, data);
+export const deleteStudent = (id) => api.delete(`/students/${id}`);
 
 // Attendance
 export const markAttendance = (data) => api.post('/attendance', data);

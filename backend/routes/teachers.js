@@ -52,4 +52,33 @@ router.get('/:id', authenticate, authorize('admin', 'teacher'), async (req, res)
   }
 });
 
+// PUT /api/teachers/:id — admin only
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, email, phone, subject, password } = req.body;
+    const update = {};
+    if (name) update.name = name;
+    if (email) update.email = email;
+    if (phone !== undefined) update.phone = phone;
+    if (subject) update.subject = subject;
+    if (password) update.passwordHash = await bcrypt.hash(password, 10);
+    const teacher = await Teacher.findByIdAndUpdate(req.params.id, update, { new: true }).select('-passwordHash');
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    res.json(teacher);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// DELETE /api/teachers/:id — admin only
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const teacher = await Teacher.findByIdAndDelete(req.params.id);
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    res.json({ message: 'Teacher deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

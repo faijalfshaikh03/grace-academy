@@ -64,4 +64,35 @@ router.get('/:id', authenticate, authorize('admin', 'teacher', 'student'), async
   }
 });
 
+// PUT /api/students/:id — admin only
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, roll_number, class_id, parent_name, parent_phone, email, password } = req.body;
+    const update = {};
+    if (name) update.name = name;
+    if (roll_number) update.roll_number = roll_number;
+    if (class_id) update.class_id = class_id;
+    if (parent_name !== undefined) update.parent_name = parent_name;
+    if (parent_phone !== undefined) update.parent_phone = parent_phone;
+    if (email) update.email = email;
+    if (password) update.passwordHash = await bcrypt.hash(password, 10);
+    const student = await Student.findByIdAndUpdate(req.params.id, update, { new: true }).select('-passwordHash').populate('class_id', 'class_name section');
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// DELETE /api/students/:id — admin only
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json({ message: 'Student deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;
