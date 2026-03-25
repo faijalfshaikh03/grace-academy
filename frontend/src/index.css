@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #e6f2f7;
+  --color-primary-100: #cce5ef;
+  --color-primary-200: #99cbdf;
+  --color-primary-300: #66b1cf;
+  --color-primary-400: #3397bf;
+  --color-primary-500: #016798;
+  --color-primary-600: #01527a;
+  --color-primary-700: #013e5c;
+  --color-primary-800: #01293d;
+  --color-primary-900: #00151f;
+  --color-primary-950: #000a0f;
+
+  --color-secondary-50: #e6f2f7;
+  --color-secondary-100: #cce5ef;
+  --color-secondary-300: #66b1cf;
+  --color-secondary-400: #3397bf;
+  --color-secondary-500: #016798;
+  --color-secondary-600: #01527a;
+  --color-secondary-700: #013e5c;
+  --color-secondary-900: #00151f;
+
+  --color-accent-300: #6ee7b7;
+  --color-accent-400: #34d399;
+  --color-accent-500: #10b981;
+  --color-accent-600: #059669;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Poppins', system-ui, sans-serif;
+
+  --max-width-content: 1200px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+.btn-primary {
+  background-color: var(--color-primary-600);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  transform: scale(1);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-700);
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary-500);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background-color: var(--color-secondary-600);
+  transform: scale(1.05);
+}
+
+.btn-outline {
+  border: 2px solid var(--color-primary-600);
+  color: var(--color-primary-600);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-outline:hover {
+  background-color: var(--color-primary-600);
+  color: white;
+}
+
+.card {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.section-padding {
+  padding: 4rem 1rem;
+}
+
+.container-content {
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.text-gradient {
+  background: linear-gradient(to right, var(--color-primary-600), var(--color-secondary-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-gradient {
+  background: linear-gradient(to bottom right, var(--color-primary-900), var(--color-primary-800), var(--color-secondary-700));
+}
+
+.glass-effect {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.text-shadow {
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.hover-lift {
+  transition: transform 0.3s;
+}
+.hover-lift:hover {
+  transform: translateY(-8px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
