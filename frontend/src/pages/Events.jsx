@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { Calendar, Clock, MapPin, User, Search } from 'lucide-react'
+import { Calendar, Clock, MapPin, User, Search, X } from 'lucide-react'
 import { getEvents } from '../api'
 
 const FALLBACK = [
@@ -20,9 +20,17 @@ export default function Events() {
   const [items, setItems] = useState(FALLBACK)
   const [search, setSearch] = useState('')
   const [type, setType] = useState('All')
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     getEvents().then(res => { if (res.data.length) setItems(res.data) }).catch(() => {})
+  }, [])
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') setSelected(null) }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
   }, [])
 
   const filtered = items.filter(i => (type === 'All' || i.type === type) && (i.title.toLowerCase().includes(search.toLowerCase()) || i.excerpt.toLowerCase().includes(search.toLowerCase())))
@@ -34,7 +42,7 @@ export default function Events() {
       <div className="bg-primary-900 text-white py-16">
         <div className="container-content text-center">
           <h1 className="text-4xl font-bold mb-4">Events & <span className="text-gradient">News</span></h1>
-          <p className="text-xl text-gray-300">Latest happenings, achievements, and upcoming events at GA School</p>
+          <p className="text-xl text-gray-300">Latest happenings, achievements, and upcoming events at Grace Academy</p>
         </div>
       </div>
       <div className="container-content py-12">
@@ -53,7 +61,7 @@ export default function Events() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filtered.map(item => (
-            <article key={item._id} className="card group">
+            <article key={item._id} className="card group cursor-pointer" onClick={() => setSelected(item)}>
               <div className="relative h-48 overflow-hidden">
                 <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -75,6 +83,104 @@ export default function Events() {
         </div>
         {filtered.length === 0 && <div className="text-center py-12 text-gray-500"><p>No events found matching your criteria.</p></div>}
       </div>
+
+      {/* EVENT DETAIL POPUP */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}
+            style={{ animation: 'slideUp 0.3s ease-out' }}>
+            
+            {/* Close Button */}
+            <button onClick={() => setSelected(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white hover:scale-110 transition-all border border-gray-200">
+              <X size={18} className="text-gray-700" />
+            </button>
+
+            {/* Image */}
+            {selected.image && (
+              <div className="relative h-64 overflow-hidden">
+                <img src={selected.image} alt={selected.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                <div className="absolute bottom-4 left-5 right-14">
+                  <div className="flex gap-2 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${catColor[selected.category] || 'bg-gray-100 text-gray-800'}`}>{selected.category}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${selected.type === 'event' ? 'bg-primary-600 text-white' : 'bg-secondary-500 text-white'}`}>{selected.type === 'event' ? 'Event' : 'News'}</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white leading-tight">{selected.title}</h2>
+                </div>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 256px)' }}>
+              {!selected.image && (
+                <>
+                  <div className="flex gap-2 mb-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${catColor[selected.category] || 'bg-gray-100 text-gray-800'}`}>{selected.category}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${selected.type === 'event' ? 'bg-primary-600 text-white' : 'bg-secondary-500 text-white'}`}>{selected.type === 'event' ? 'Event' : 'News'}</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{selected.title}</h2>
+                </>
+              )}
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
+                  <Calendar size={18} className="text-primary-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Date</p>
+                    <p className="text-sm font-medium text-gray-900">{formatDate(selected.date)}</p>
+                  </div>
+                </div>
+                {selected.time && (
+                  <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
+                    <Clock size={18} className="text-primary-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Time</p>
+                      <p className="text-sm font-medium text-gray-900">{selected.time}</p>
+                    </div>
+                  </div>
+                )}
+                {selected.location && (
+                  <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
+                    <MapPin size={18} className="text-primary-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Location</p>
+                      <p className="text-sm font-medium text-gray-900">{selected.location}</p>
+                    </div>
+                  </div>
+                )}
+                {selected.author && (
+                  <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
+                    <User size={18} className="text-primary-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Author</p>
+                      <p className="text-sm font-medium text-gray-900">{selected.author}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Description</h3>
+                <p className="text-gray-700 leading-relaxed">{selected.excerpt}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
       <Footer />
     </div>
   )
