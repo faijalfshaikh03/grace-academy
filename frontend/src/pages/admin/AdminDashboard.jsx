@@ -40,7 +40,7 @@ export default function AdminDashboard() {
     getGallery().then(r => setGallery(r.data)).catch(() => {})
   }, [])
 
-  const logout = () => { localStorage.removeItem('ga_admin_token'); localStorage.removeItem('ga_admin_email'); navigate('/admin') }
+  const logout = () => { localStorage.clear(); navigate('/admin') }
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(''), 2500) }
 
   const saveNotice = async () => { setSaving(true); try { const r = await createNotice(noticeForm); setNotices([r.data, ...notices]); setShowForm(false); setNoticeForm({ title: '', description: '', category: 'General', type: 'normal', status: 'published' }); flash('Notice created!') } catch { flash('Error') } finally { setSaving(false) } }

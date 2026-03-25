@@ -1,26 +1,36 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react'
-import { loginAdmin } from '../../api'
+import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield, BookOpen, GraduationCap } from 'lucide-react'
+import { loginUser } from '../../api'
 
-export default function AdminLogin() {
+const roles = [
+  { id: 'admin', label: 'Admin', icon: Shield, color: 'from-red-500 to-red-600', desc: 'Manage the entire system' },
+  { id: 'teacher', label: 'Teacher', icon: BookOpen, color: 'from-blue-500 to-blue-600', desc: 'Manage classes & students' },
+  { id: 'student', label: 'Student', icon: GraduationCap, color: 'from-green-500 to-green-600', desc: 'View your progress' },
+]
+
+export default function Login() {
+  const [role, setRole] = useState('admin')
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     try {
-      const res = await loginAdmin(form)
-      localStorage.setItem('ga_admin_token', res.data.token)
-      localStorage.setItem('ga_admin_email', res.data.email)
-      navigate('/admin/dashboard')
+      const res = await loginUser({ ...form, role })
+      localStorage.setItem('ga_token', res.data.token)
+      localStorage.setItem('ga_role', res.data.role)
+      localStorage.setItem('ga_email', res.data.email)
+      if (res.data.name) localStorage.setItem('ga_name', res.data.name)
+
+      if (res.data.role === 'admin') navigate('/admin/dashboard')
+      else if (res.data.role === 'teacher') navigate('/teacher/dashboard')
+      else if (res.data.role === 'student') navigate('/student/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.')
     } finally {
@@ -28,56 +38,70 @@ export default function AdminLogin() {
     }
   }
 
+  const selectedRole = roles.find(r => r.id === role)
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4" style={{ background: 'linear-gradient(135deg, #e6f2f7 0%, #cce5ef 100%)' }}>
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center mb-4">
-            <Lock size={32} className="text-white" />
+          <div className={`mx-auto h-16 w-16 bg-gradient-to-br ${selectedRole.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
+            <selectedRole.icon size={32} className="text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Admin Login</h2>
-          <p className="mt-2 text-sm text-gray-600">Sign in to manage GA School website</p>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+          <p className="mt-1 text-sm text-gray-600">Sign in to GA School Portal</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Role Selector */}
+        <div className="flex gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-200">
+          {roles.map(r => (
+            <button key={r.id} onClick={() => { setRole(r.id); setError('') }}
+              className={`flex-1 flex flex-col items-center py-3 px-2 rounded-lg text-xs font-medium transition-all ${role === r.id ? `bg-gradient-to-br ${r.color} text-white shadow-md` : 'text-gray-500 hover:bg-gray-50'}`}>
+              <r.icon size={18} className="mb-1" />
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-xl p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
-                <AlertCircle size={16} className="text-red-600" />
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-600 flex-shrink-0" />
                 <span className="text-red-800 text-sm">{error}</span>
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
               <div className="relative">
-                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="email" name="email" value={form.email} onChange={handleChange} required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="admin@gaschool.edu" />
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                  placeholder={role === 'admin' ? 'admin@gaschool.edu' : `${role}@gaschool.edu`} />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
               <div className="relative">
-                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} required
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => setForm({...form, password: e.target.value})} required
+                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                   placeholder="Enter your password" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
-              {loading ? 'Signing in...' : 'Sign In'}
+            <button type="submit" disabled={loading}
+              className={`w-full py-2.5 rounded-lg text-white font-medium text-sm bg-gradient-to-r ${selectedRole.color} hover:opacity-90 transition-opacity disabled:opacity-50`}>
+              {loading ? 'Signing in...' : `Sign In as ${selectedRole.label}`}
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800 font-medium mb-1">Default Credentials:</p>
-            <p className="text-xs text-blue-700">Email: admin@gaschool.edu</p>
-            <p className="text-xs text-blue-700">Password: admin123</p>
-          </div>
+          {role === 'admin' && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-800 font-medium">Default: admin@gaschool.edu / admin123</p>
+            </div>
+          )}
         </div>
 
         <div className="text-center">
