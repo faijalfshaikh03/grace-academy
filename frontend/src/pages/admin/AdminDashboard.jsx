@@ -5,10 +5,10 @@ import {
   LogOut, Menu, X, Home, Plus, Trash2, Save, Eye, ArrowUpRight, Pencil
 } from 'lucide-react'
 import {
-  getAllNotices, createNotice, deleteNotice,
+  getAllNotices, createNotice, uploadNotice, deleteNotice,
   getEvents, createEvent, deleteEvent,
   getEnquiries, updateEnquiry, deleteEnquiry,
-  getGallery, createGalleryImage, deleteGalleryImage,
+  getGallery, createGalleryImage, uploadGalleryImage, deleteGalleryImage,
   getTeachers, createTeacher, updateTeacher, deleteTeacher,
   getClasses, createClass, updateClass, deleteClass,
   getStudents, createStudent, updateStudent, deleteStudent
@@ -35,8 +35,12 @@ export default function AdminDashboard() {
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
   const [noticeForm, setNoticeForm] = useState({ title: '', description: '', category: 'General', type: 'normal', status: 'published' })
+  const [noticePdf, setNoticePdf] = useState(null)
   const [eventForm, setEventForm] = useState({ title: '', type: 'event', date: '', time: '', location: '', image: '', excerpt: '', category: 'General' })
   const [galleryForm, setGalleryForm] = useState({ src: '', title: '', category: 'Events' })
+  const [galleryTab, setGalleryTab] = useState('upload') // 'upload' | 'url'
+  const [galleryFile, setGalleryFile] = useState(null)
+  const [galleryPreview, setGalleryPreview] = useState('')
   const [teacherForm, setTeacherForm] = useState({ name: '', email: '', phone: '', subject: '', password: '' })
   const [classForm, setClassForm] = useState({ class_name: '', section: '', class_teacher_id: '' })
   const [studentForm, setStudentForm] = useState({ name: '', roll_number: '', class_id: '', parent_name: '', parent_phone: '', email: '', password: '' })
@@ -115,9 +119,51 @@ export default function AdminDashboard() {
   const removeStudent = async (id) => { if (!confirm('Delete this student?')) return; await deleteStudent(id); setStudents(students.filter(s => s._id !== id)); flash('Student deleted') }
 
   // Notices/Events/Gallery (unchanged logic)
-  const saveNotice = async () => { setSaving(true); try { const r = await createNotice(noticeForm); setNotices([r.data, ...notices]); resetForms(); setNoticeForm({ title: '', description: '', category: 'General', type: 'normal', status: 'published' }); flash('Notice created!') } catch { flash('Error') } finally { setSaving(false) } }
+  const saveNotice = async () => {
+    setSaving(true)
+    try {
+      let r
+      if (noticePdf) {
+        const fd = new FormData()
+        fd.append('pdf', noticePdf)
+        fd.append('title', noticeForm.title)
+        fd.append('description', noticeForm.description)
+        fd.append('category', noticeForm.category)
+        fd.append('type', noticeForm.type)
+        fd.append('status', noticeForm.status)
+        r = await uploadNotice(fd)
+      } else {
+        r = await createNotice(noticeForm)
+      }
+      setNotices([r.data, ...notices])
+      resetForms()
+      setNoticeForm({ title: '', description: '', category: 'General', type: 'normal', status: 'published' })
+      setNoticePdf(null)
+      flash('Notice created!')
+    } catch (e) { flash(e.response?.data?.message || 'Error') } finally { setSaving(false) }
+  }
   const saveEvent = async () => { setSaving(true); try { const r = await createEvent(eventForm); setEvents([r.data, ...events]); resetForms(); setEventForm({ title: '', type: 'event', date: '', time: '', location: '', image: '', excerpt: '', category: 'General' }); flash('Event created!') } catch { flash('Error') } finally { setSaving(false) } }
-  const saveGallery = async () => { setSaving(true); try { const r = await createGalleryImage(galleryForm); setGallery([r.data, ...gallery]); resetForms(); setGalleryForm({ src: '', title: '', category: 'Events' }); flash('Image added!') } catch { flash('Error') } finally { setSaving(false) } }
+  const saveGallery = async () => {
+    setSaving(true)
+    try {
+      let r
+      if (galleryTab === 'upload' && galleryFile) {
+        const fd = new FormData()
+        fd.append('image', galleryFile)
+        fd.append('title', galleryForm.title)
+        fd.append('category', galleryForm.category)
+        r = await uploadGalleryImage(fd)
+      } else {
+        if (!galleryForm.src) { flash('Please provide an image URL'); setSaving(false); return }
+        r = await createGalleryImage(galleryForm)
+      }
+      setGallery([r.data, ...gallery])
+      resetForms()
+      setGalleryForm({ src: '', title: '', category: 'Events' })
+      setGalleryFile(null); setGalleryPreview('')
+      flash('Image added!')
+    } catch (e) { flash(e.response?.data?.message || 'Upload failed') } finally { setSaving(false) }
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Home },
@@ -382,17 +428,51 @@ export default function AdminDashboard() {
                 <button onClick={() => { resetForms(); setShowForm(true) }} className="bg-primary-600 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-primary-700"><Plus size={16} /> New Notice</button>
               </div>
               {showForm && (
-                <div className="bg-white border rounded-xl p-4 space-y-3">
-                  <input placeholder="Notice title" value={noticeForm.title} onChange={e => setNoticeForm({...noticeForm, title: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
-                  <textarea placeholder="Description" rows={2} value={noticeForm.description} onChange={e => setNoticeForm({...noticeForm, description: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
+                <div className="bg-white border rounded-xl p-5 space-y-4">
+                  <h3 className="font-semibold text-sm text-gray-700">New Notice</h3>
+                  <input placeholder="Notice title" value={noticeForm.title} onChange={e => setNoticeForm({...noticeForm, title: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500" />
+                  <textarea placeholder="Description" rows={3} value={noticeForm.description} onChange={e => setNoticeForm({...noticeForm, description: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
                   <div className="flex flex-wrap gap-2">
                     <select value={noticeForm.category} onChange={e => setNoticeForm({...noticeForm, category: e.target.value})} className="border rounded-lg px-3 py-2 text-sm">{['General','Examination','Meeting','Activity','Holiday','Admission'].map(c => <option key={c}>{c}</option>)}</select>
                     <select value={noticeForm.type} onChange={e => setNoticeForm({...noticeForm, type: e.target.value})} className="border rounded-lg px-3 py-2 text-sm">{['normal','important','urgent'].map(t => <option key={t}>{t}</option>)}</select>
                     <select value={noticeForm.status} onChange={e => setNoticeForm({...noticeForm, status: e.target.value})} className="border rounded-lg px-3 py-2 text-sm"><option value="published">Published</option><option value="draft">Draft</option></select>
                   </div>
+
+                  {/* PDF Attachment */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">PDF Attachment (optional)</label>
+                    <label className="block cursor-pointer">
+                      <div className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors ${
+                        noticePdf ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
+                      }`}>
+                        {noticePdf ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-2xl">📄</span>
+                            <div className="text-left">
+                              <p className="text-sm font-medium text-gray-900">{noticePdf.name}</p>
+                              <p className="text-xs text-gray-500">{(noticePdf.size / 1024).toFixed(0)} KB</p>
+                            </div>
+                            <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setNoticePdf(null) }}
+                              className="ml-3 p-1 text-gray-400 hover:text-red-500 rounded">
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">
+                            <p className="text-sm font-medium text-gray-600">Click to attach a PDF file</p>
+                            <p className="text-xs text-gray-400 mt-0.5">PDF only — max 10 MB</p>
+                          </div>
+                        )}
+                      </div>
+                      <input type="file" accept=".pdf,application/pdf" className="hidden"
+                        onChange={e => { const f = e.target.files[0]; if (f) setNoticePdf(f) }}
+                      />
+                    </label>
+                  </div>
+
                   <div className="flex gap-2">
-                    <button onClick={saveNotice} disabled={saving} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 flex items-center gap-1.5"><Save size={14} />{saving ? 'Saving...' : 'Save'}</button>
-                    <button onClick={resetForms} className="px-4 py-2 rounded-lg text-sm text-gray-600 border hover:bg-gray-50">Cancel</button>
+                    <button onClick={saveNotice} disabled={saving} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 flex items-center gap-1.5 disabled:opacity-50"><Save size={14} />{saving ? 'Saving...' : 'Save'}</button>
+                    <button onClick={() => { resetForms(); setNoticePdf(null) }} className="px-4 py-2 rounded-lg text-sm text-gray-600 border hover:bg-gray-50">Cancel</button>
                   </div>
                 </div>
               )}
@@ -458,15 +538,72 @@ export default function AdminDashboard() {
                 <button onClick={() => { resetForms(); setShowForm(true) }} className="bg-primary-600 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-primary-700"><Plus size={16} /> Add Image</button>
               </div>
               {showForm && (
-                <div className="bg-white border rounded-xl p-4 space-y-3">
-                  <input placeholder="Image URL" value={galleryForm.src} onChange={e => setGalleryForm({...galleryForm, src: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
-                  <div className="flex gap-3">
-                    <input placeholder="Title" value={galleryForm.title} onChange={e => setGalleryForm({...galleryForm, title: e.target.value})} className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none" />
-                    <select value={galleryForm.category} onChange={e => setGalleryForm({...galleryForm, category: e.target.value})} className="border rounded-lg px-3 py-2 text-sm">{['Academics','Sports','Cultural','Infrastructure','Activities','Events'].map(c => <option key={c}>{c}</option>)}</select>
+                <div className="bg-white border rounded-xl p-5 space-y-4">
+                  <h3 className="font-semibold text-sm text-gray-700">Add Gallery Image</h3>
+
+                  {/* Tab toggle */}
+                  <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+                    {['upload','url'].map(t => (
+                      <button key={t} onClick={() => { setGalleryTab(t); setGalleryFile(null); setGalleryPreview(''); setGalleryForm(f => ({...f, src:''})) }}
+                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          galleryTab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                        }`}>
+                        {t === 'upload' ? '📁 Upload File' : '🔗 Paste URL'}
+                      </button>
+                    ))}
                   </div>
+
+                  {galleryTab === 'upload' ? (
+                    <div>
+                      <label className="block w-full cursor-pointer">
+                        <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
+                          galleryFile ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
+                        }`}>
+                          {galleryPreview ? (
+                            <img src={galleryPreview} alt="preview" className="mx-auto max-h-40 rounded-lg object-contain mb-2" />
+                          ) : (
+                            <div className="text-gray-400">
+                              <div className="text-3xl mb-2">🖼️</div>
+                              <p className="text-sm font-medium text-gray-600">Click to choose an image</p>
+                              <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP — max 5 MB</p>
+                            </div>
+                          )}
+                          {galleryFile && <p className="text-xs text-primary-600 mt-1 font-medium">{galleryFile.name}</p>}
+                        </div>
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={e => {
+                            const f = e.target.files[0]
+                            if (!f) return
+                            setGalleryFile(f)
+                            setGalleryPreview(URL.createObjectURL(f))
+                          }}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <input placeholder="https://example.com/photo.jpg" value={galleryForm.src}
+                      onChange={e => setGalleryForm({...galleryForm, src: e.target.value})}
+                      className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500" />
+                  )}
+
+                  <div className="flex gap-3">
+                    <input placeholder="Image title (optional)" value={galleryForm.title}
+                      onChange={e => setGalleryForm({...galleryForm, title: e.target.value})}
+                      className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500" />
+                    <select value={galleryForm.category}
+                      onChange={e => setGalleryForm({...galleryForm, category: e.target.value})}
+                      className="border rounded-lg px-3 py-2 text-sm">
+                      {['Academics','Sports','Cultural','Infrastructure','Activities','Events'].map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+
                   <div className="flex gap-2">
-                    <button onClick={saveGallery} disabled={saving} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 flex items-center gap-1.5"><Save size={14} />{saving ? 'Saving...' : 'Add'}</button>
-                    <button onClick={resetForms} className="px-4 py-2 rounded-lg text-sm text-gray-600 border hover:bg-gray-50">Cancel</button>
+                    <button onClick={saveGallery} disabled={saving || (galleryTab === 'upload' && !galleryFile)}
+                      className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <Save size={14} />{saving ? 'Uploading...' : 'Add to Gallery'}
+                    </button>
+                    <button onClick={() => { resetForms(); setGalleryFile(null); setGalleryPreview('') }}
+                      className="px-4 py-2 rounded-lg text-sm text-gray-600 border hover:bg-gray-50">Cancel</button>
                   </div>
                 </div>
               )}
@@ -495,19 +632,23 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Contact</th>
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Grade</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Message</th>
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
                     <th className="px-4 py-3 w-10"></th>
                   </tr></thead>
                   <tbody className="divide-y divide-gray-50">
                     {enquiries.map(e => (
-                      <tr key={e._id} className="hover:bg-gray-50">
+                      <tr key={e._id} className="hover:bg-gray-50 align-top">
                         <td className="px-4 py-3 font-medium text-gray-900">{e.name}</td>
                         <td className="px-4 py-3"><p className="text-gray-600">{e.email}</p><p className="text-xs text-gray-400">{e.phone || '—'}</p></td>
                         <td className="px-4 py-3 text-gray-600">{e.grade || '—'}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(e.createdAt)}</td>
+                        <td className="px-4 py-3 text-gray-600 text-xs max-w-xs">
+                          <p className="whitespace-pre-wrap break-words leading-relaxed">{e.message || '—'}</p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(e.createdAt)}</td>
                         <td className="px-4 py-3">
-                          <select value={e.status} onChange={async ev => { await updateEnquiry(e._id, { status: ev.target.value }); setEnquiries(enquiries.map(x => x._id === e._id ? {...x, status: ev.target.value} : x)) }}
+                          <select value={e.status} onChange={async ev => { const val = ev.target.value; try { await updateEnquiry(e._id, { status: val }); setEnquiries(enquiries.map(x => x._id === e._id ? {...x, status: val} : x)); flash('Status updated') } catch { flash('Failed to update status') } }}
                             className={`text-xs px-2 py-1 rounded-full font-medium border-0 cursor-pointer ${statusColor[e.status]}`}>
                             {['new','contacted','pending','closed'].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>

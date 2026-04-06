@@ -8,6 +8,7 @@ import Events from './pages/Events'
 import Gallery from './pages/Gallery'
 import Contact from './pages/Contact'
 import Login from './pages/admin/AdminLogin'
+import UserLogin from './pages/UserLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -15,7 +16,7 @@ import StudentDashboard from './pages/student/StudentDashboard'
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('ga_token')
   const role = localStorage.getItem('ga_role')
-  if (!token) return <Navigate to="/admin" replace />
+  if (!token) return <Navigate to="/login" replace />
   if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/admin" replace />
   return children
 }
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<UserLogin />} />
         <Route path="/admin" element={<Login />} />
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/teacher/dashboard" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />

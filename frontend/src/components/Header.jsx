@@ -40,7 +40,9 @@ const Header = () => {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/admin" className="hover:text-secondary-400 transition-colors">
+            <span className="text-white/60 text-xs">Mon–Fri: 8:00 AM – 4:00 PM</span>
+            <span className="text-white/30">|</span>
+            <Link to="/admin" className="text-white/70 hover:text-white text-xs transition-colors">
               Admin Login
             </Link>
           </div>
@@ -80,6 +82,9 @@ const Header = () => {
               <Link to="/contact" className="btn-primary hidden md:inline-flex" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
                 Enquire Now
               </Link>
+              <Link to="/login" className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 border border-primary-600 text-primary-600 rounded-lg text-sm font-medium hover:bg-primary-50 transition-colors">
+                Login
+              </Link>
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -108,8 +113,8 @@ const Header = () => {
                 <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="btn-primary block text-center">
                   Enquire Now
                 </Link>
-                <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block text-center text-primary-600 hover:text-primary-700 font-medium">
-                  Admin Login
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block text-center py-2 border border-primary-600 text-primary-600 rounded-lg font-medium hover:bg-primary-50 transition-colors">
+                  Login
                 </Link>
               </div>
             </nav>

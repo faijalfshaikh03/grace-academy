@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({ baseURL: API_URL });
 
@@ -22,6 +22,8 @@ export const loginAdmin = (data) => api.post('/auth/login', { ...data, role: 'ad
 export const getNotices = () => api.get('/notices');
 export const getAllNotices = () => api.get('/notices/all');
 export const createNotice = (data) => api.post('/notices', data);
+export const uploadNotice = (formData) =>
+  api.post('/notices/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateNotice = (id, data) => api.put(`/notices/${id}`, data);
 export const deleteNotice = (id) => api.delete(`/notices/${id}`);
 
@@ -40,7 +42,10 @@ export const deleteEnquiry = (id) => api.delete(`/enquiries/${id}`);
 // Gallery
 export const getGallery = () => api.get('/gallery');
 export const createGalleryImage = (data) => api.post('/gallery', data);
+export const uploadGalleryImage = (formData) =>
+  api.post('/gallery/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const deleteGalleryImage = (id) => api.delete(`/gallery/${id}`);
+
 
 // === ERP APIs ===
 

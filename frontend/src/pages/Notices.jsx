@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { FileText, Download, Calendar, AlertCircle, ChevronRight, Search } from 'lucide-react'
+import { FileText, Download, Calendar, AlertCircle, Search, X, Paperclip } from 'lucide-react'
 import { getNotices } from '../api'
 
 const FALLBACK = [
@@ -13,20 +13,31 @@ const FALLBACK = [
   { _id: '6', title: 'Sports Day Announcement', date: '2024-02-05', category: 'Activity', type: 'normal', hasAttachment: false, description: 'Annual Sports Day will be held on March 20, 2024.' },
 ]
 
-const catColor = { Examination: 'bg-red-100 text-red-800', Meeting: 'bg-blue-100 text-blue-800', Activity: 'bg-green-100 text-green-800', Holiday: 'bg-purple-100 text-purple-800', Admission: 'bg-orange-100 text-orange-800' }
-const cats = ['All', 'Examination', 'Meeting', 'Activity', 'Holiday', 'Admission']
+const catColor = { Examination: 'bg-red-100 text-red-800', Meeting: 'bg-blue-100 text-blue-800', Activity: 'bg-green-100 text-green-800', Holiday: 'bg-purple-100 text-purple-800', Admission: 'bg-orange-100 text-orange-800', General: 'bg-gray-100 text-gray-800' }
+const typeIcon = { urgent: 'border-l-red-500', important: 'border-l-orange-500', normal: 'border-l-primary-500' }
+const cats = ['All', 'Examination', 'Meeting', 'Activity', 'Holiday', 'Admission', 'General']
 
 export default function Notices() {
   const [notices, setNotices] = useState(FALLBACK)
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('All')
+  const [selected, setSelected] = useState(null) // notice object for modal
 
   useEffect(() => {
     getNotices().then(res => { if (res.data.length) setNotices(res.data) }).catch(() => {})
   }, [])
 
-  const filtered = notices.filter(n => (cat === 'All' || n.category === cat) && (n.title.toLowerCase().includes(search.toLowerCase()) || n.description.toLowerCase().includes(search.toLowerCase())))
+  const closeModal = useCallback(() => { setSelected(null); document.body.style.overflow = '' }, [])
+  const openModal = (notice) => { setSelected(notice); document.body.style.overflow = 'hidden' }
 
+  useEffect(() => {
+    if (!selected) return
+    const handler = (e) => { if (e.key === 'Escape') closeModal() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selected, closeModal])
+
+  const filtered = notices.filter(n => (cat === 'All' || n.category === cat) && (n.title.toLowerCase().includes(search.toLowerCase()) || (n.description || '').toLowerCase().includes(search.toLowerCase())))
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
 
   return (
@@ -43,7 +54,7 @@ export default function Notices() {
           <div className="relative flex-1">
             <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="Search notices..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" />
           </div>
           <div className="flex flex-wrap gap-2">
             {cats.map(c => (
@@ -52,37 +63,116 @@ export default function Notices() {
             ))}
           </div>
         </div>
+
         <div className="space-y-4">
           {filtered.map(notice => (
-            <div key={notice._id} className="card hover-lift">
-              <div className="card-content">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start gap-3 mb-2">
-                      {notice.type === 'urgent' ? <AlertCircle size={16} className="text-red-600 mt-1" /> : notice.type === 'important' ? <AlertCircle size={16} className="text-orange-600 mt-1" /> : <FileText size={16} className="text-gray-600 mt-1" />}
+            <div key={notice._id}
+              onClick={() => openModal(notice)}
+              className={`bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 ${typeIcon[notice.type] || typeIcon.normal} hover:shadow-md transition-all cursor-pointer`}>
+              <div className="p-5">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-3">
+                      {notice.type === 'urgent' ? <AlertCircle size={18} className="text-red-600 mt-0.5 flex-shrink-0" /> : notice.type === 'important' ? <AlertCircle size={18} className="text-orange-600 mt-0.5 flex-shrink-0" /> : <FileText size={18} className="text-gray-500 mt-0.5 flex-shrink-0" />}
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{notice.title}</h3>
-                        <p className="text-gray-600 text-sm mt-1">{notice.description}</p>
+                        <h3 className="text-base font-semibold text-gray-900">{notice.title}</h3>
+                        <p className="text-gray-500 text-sm mt-1 line-clamp-1">{notice.description}</p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 mt-3">
+                    <div className="flex flex-wrap items-center gap-3 mt-3 ml-8">
                       <div className="flex items-center text-sm text-gray-500"><Calendar size={14} className="mr-1" />{formatDate(notice.date)}</div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${catColor[notice.category] || 'bg-gray-100 text-gray-800'}`}>{notice.category}</span>
-                      {notice.hasAttachment && <div className="flex items-center text-sm text-gray-500"><FileText size={14} className="mr-1" />Attachment</div>}
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${catColor[notice.category] || catColor.General}`}>{notice.category}</span>
+                      {(notice.hasAttachment || notice.attachmentUrl) && (
+                        <div className="flex items-center text-sm text-primary-600 font-medium"><Paperclip size={14} className="mr-1" />PDF Attached</div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {notice.hasAttachment && <button className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"><Download size={18} /></button>}
-                    <button className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"><ChevronRight size={18} /></button>
+                  <div className="flex items-center gap-2 ml-8 lg:ml-0">
+                    <span className="text-xs text-primary-600 font-medium hover:underline">View Details →</span>
                   </div>
                 </div>
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div className="text-center py-12 text-gray-500"><FileText size={48} className="mx-auto mb-4 text-gray-300" /><p>No notices found matching your criteria.</p></div>}
+          {filtered.length === 0 && (
+            <div className="text-center py-16 text-gray-500">
+              <FileText size={48} className="mx-auto mb-4 text-gray-300" />
+              <p>No notices found matching your criteria.</p>
+            </div>
+          )}
         </div>
       </div>
       <Footer />
+
+      {/* ── Notice Detail Modal ─────────────────────────── */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', animation: 'fadeIn 0.2s ease' }}
+          onClick={closeModal}
+        >
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+          `}</style>
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto"
+            style={{ animation: 'slideUp 0.25s ease' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className={`p-6 border-b border-gray-100 relative`}>
+              <button onClick={closeModal}
+                className="absolute top-4 right-4 w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+                title="Close (Esc)">
+                <X size={18} className="text-gray-600" />
+              </button>
+
+              <div className="flex items-start gap-3 pr-10">
+                {selected.type === 'urgent' ? <AlertCircle size={22} className="text-red-600 mt-0.5 flex-shrink-0" /> : selected.type === 'important' ? <AlertCircle size={22} className="text-orange-600 mt-0.5 flex-shrink-0" /> : <FileText size={22} className="text-primary-600 mt-0.5 flex-shrink-0" />}
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 leading-tight">{selected.title}</h2>
+                  <div className="flex flex-wrap items-center gap-3 mt-3">
+                    <div className="flex items-center text-sm text-gray-500"><Calendar size={14} className="mr-1.5" />{formatDate(selected.date)}</div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${catColor[selected.category] || catColor.General}`}>{selected.category}</span>
+                    {selected.type !== 'normal' && (
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${selected.type === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
+                        {selected.type.charAt(0).toUpperCase() + selected.type.slice(1)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {selected.description}
+              </div>
+
+              {/* Attachment */}
+              {(selected.hasAttachment || selected.attachmentUrl) && selected.attachmentUrl && (
+                <div className="mt-8 p-4 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Paperclip size={20} className="text-primary-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">PDF Attachment</p>
+                      <p className="text-xs text-gray-500">Click to download or view</p>
+                    </div>
+                  </div>
+                  <a href={selected.attachmentUrl} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+                    <Download size={16} />Download
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
