@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, Trophy, Users, Heart, FileText, Calendar, Image as ImageIcon } from 'lucide-react'
 
 const features = [
-  { icon: BookOpen, title: 'Academic Excellence', desc: 'CBSE curriculum with modern teaching methodologies and smart classrooms.', link: '/academics' },
+  { icon: BookOpen, title: 'Academic Excellence', desc: 'State Board curriculum with modern teaching methodologies and smart classrooms.', link: '/academics' },
   { icon: Trophy, title: 'Sports & Activities', desc: 'Comprehensive sports programs and extracurricular clubs for holistic growth.', link: '/academics' },
   { icon: Users, title: 'Expert Faculty', desc: '50+ experienced teachers dedicated to nurturing every student\'s potential.', link: '/about' },
   { icon: Heart, title: 'Values & Character', desc: 'Strong focus on moral values, ethics, and community responsibility.', link: '/about' },

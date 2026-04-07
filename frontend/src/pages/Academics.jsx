@@ -19,7 +19,7 @@ export default function Academics() {
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Curriculum Highlights</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { title: 'CBSE Curriculum', desc: 'Following the Central Board of Secondary Education curriculum with emphasis on conceptual understanding.' },
+              { title: 'State Board Curriculum', desc: 'Following the State Board of Secondary Education curriculum with emphasis on conceptual understanding.' },
               { title: 'Digital Learning', desc: 'Smart classrooms, computer labs, and digital resources to enhance the learning experience.' },
               { title: 'Language Programs', desc: 'Proficiency in English, Hindi, and Marathi to prepare students for diverse opportunities.' },
             ].map(item => (
