@@ -38,7 +38,7 @@ const Hero = () => {
                   View Programs
                 </Link>
                 <a
-                  href="https://www.google.com/maps/place/Grace+Academy"
+                  href="https://maps.app.goo.gl/9bfDL1Qr8C9zAVTK7"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-outline inline-flex items-center justify-center"
